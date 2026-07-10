@@ -1,0 +1,41 @@
+# Sanity-check run for the sparse parity replication.
+#
+# Sample budget is chosen comfortably above the n^k threshold (~27,000 for
+# n=30, k=3). If this run ends flat, the first response is to bump this
+# budget by 3x, not to touch the optimizer.
+
+run_name: sanity
+
+# Task
+n: 40
+k: 3
+S_seed: 0  # data.py logs the actual S at run start; train.py asserts it matches.
+expected_S: [20, 24, 32]
+
+# Sample budget: ~3.9x the n^k = 64000 threshold.
+sample_budget: 250000
+
+# Model: 1 hidden layer, width 64, ReLU, scalar output.
+# Smaller than the initial 256 to reduce the chance that random init already
+# hands the model a hidden unit correlated with the true parity, which lets
+# the flat search phase actually appear.
+hidden: 64
+
+# Plain SGD. Not Adam. No adaptive per-parameter scaling.
+optimizer: sgd
+lr: 0.1
+momentum: 0.0
+
+# Online sampling: a fresh batch every step, drawn from the true distribution.
+batch_size: 32
+
+# Held-out eval batch is redrawn fresh at every eval point too.
+eval_every_steps: 25
+eval_batch_size: 10000
+
+# Seeds: model init / train-batch rng / eval-batch rng.
+model_seed: 0
+train_data_seed: 1
+eval_data_seed: 2
+
+device: cpu

@@ -1,0 +1,31 @@
+# Near-threshold sweep run: budget ~= n^k.
+#
+# ~1.0x the n^k = 64,000 threshold. Interesting boundary case: theory says
+# roughly n^k is where things start being learnable, so this run may or may
+# not cross the drop within the budget.
+
+run_name: sweep_near
+
+n: 40
+k: 3
+S_seed: 0
+expected_S: [20, 24, 32]
+
+sample_budget: 64000
+
+hidden: 64
+
+optimizer: sgd
+lr: 0.1
+momentum: 0.0
+
+batch_size: 32
+
+eval_every_steps: 25
+eval_batch_size: 10000
+
+model_seed: 20
+train_data_seed: 21
+eval_data_seed: 22
+
+device: cpu

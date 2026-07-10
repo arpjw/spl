@@ -1,0 +1,36 @@
+# Aside, not part of the sweep proper. Kept because it is an interesting
+# finding on its own: multi-pass SGD over a fixed pool of 25,600 unique
+# samples (~0.4x the n^k = 64,000 threshold) learns the parity anyway,
+# reaching essentially zero eval loss on fresh online samples. This is not a
+# contradiction of the SQ lower bound. The SQ bound applies to single-pass
+# correlational-SQ algorithms; multi-pass SGD over a small fixed pool is a
+# fundamentally different (non-SQ) algorithm and can extract more signal per
+# unique sample. Called out in the writeup as an aside / "explore next", not
+# as the below-threshold negative result.
+
+run_name: aside_fixed_pool
+
+n: 40
+k: 3
+S_seed: 0
+expected_S: [20, 24, 32]
+
+fixed_pool_size: 25600
+sample_budget: 2000000
+
+hidden: 64
+
+optimizer: sgd
+lr: 0.1
+momentum: 0.0
+
+batch_size: 32
+
+eval_every_steps: 250
+eval_batch_size: 10000
+
+model_seed: 0
+train_data_seed: 1
+eval_data_seed: 2
+
+device: cpu
