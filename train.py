@@ -125,7 +125,7 @@ def train(cfg: dict) -> None:
     eval_every = int(cfg["eval_every_steps"])
     eval_batch_size = int(cfg["eval_batch_size"])
 
-    # Data source: online (default) or fixed-pool (below-threshold negative run).
+    # Data source: online (default) or fixed-pool (separate multi-pass run).
     fixed_pool_size = int(cfg.get("fixed_pool_size") or 0)
     if fixed_pool_size > 0:
         pool_x, pool_y = sample_batch(train_rng, n, S, fixed_pool_size)
