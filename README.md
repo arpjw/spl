@@ -1,44 +1,44 @@
 # Sparse Parity Learning Near the Computational Limit
 
 A small MLP trained with plain SGD on a k-sparse parity function shows a
-sharp sample-complexity phase transition tied to a known statistical-query
-lower bound. Below roughly `n^k` independent samples of single-pass SGD, the
-function is not learnable at all: not "hasn't learned yet", but a genuine
-information-theoretic floor. This is a replication of Barak, Edelman, Goel,
-Kakade, Malach, Zhang (2022), plus a Fourier-basis progress measure built
-from scratch for this task that detects the phase transition about
-4,000-6,000 samples before the loss curve does.
+sharp transition in its learning curve. The related statistical-query (SQ)
+lower bound concerns computation in a restricted query model, not an
+information-theoretic sample floor or an exact threshold at `n^k` samples.
+This experiment follows Barak, Edelman, Goel, Kakade, Malach, Zhang (2022)
+and adds a Fourier-basis progress measure for this task that detects a signal
+about 4,000-6,000 samples before the loss curve moves in one run.
 
 ![sample complexity sweep](results/sweep_plot.png)
 
-## What is sparse parity learning, and why does it have a hard floor?
+The figure's `n^k threshold` marker is a reference scale, not a proven
+sample cutoff.
+
+## What is sparse parity learning, and why can it be computationally hard?
 
 A k-sparse parity is defined by picking a fixed unknown subset `S` of size
 `k` from `n` coordinates and setting `y = product of x_i for i in S`, with
 inputs `x` uniform on `{-1, +1}^n`. Only `k` of the `n` coordinates matter,
-but an algorithm that queries only aggregate statistics of the data
-(correlational statistical queries) needs `Omega(n^k)` samples to identify
-`S`. Intuitively, no low-degree Fourier feature of `x` is correlated with
-`y`, since parity is orthogonal to every proper subset of `S`, so an SQ
-learner has no useful directional signal until it inspects a feature that
-touches all `k` relevant coordinates. This is not a "hasn't converged yet"
-situation but an information-theoretic bound on that class of algorithms.
-Single-pass online SGD is approximately a correlational-SQ algorithm and is
-subject to the same `n^k` floor.
+but parity is orthogonal to every other parity under the uniform input
+distribution. In the constant-noise SQ model, this gives a computational
+lower bound of `Omega(n^k)` queries, while the statistical sample limit is
+only on the order of `k log n`. Noiseless parity can also be learned in
+polynomial time by Gaussian elimination. The [source paper](https://proceedings.neurips.cc/paper_files/paper/2022/file/884baf65392170763b27c914087bde01-Paper-Conference.pdf)
+relates SGD's computational scaling to SQ bounds. Neither that result nor
+the four sweep runs here establishes a hard sample threshold for this MLP.
 
 ## Setup
 
 - Task: k-sparse parity, `n = 40`, `k = 3`
 - Secret subset `S = [20, 24, 32]`, picked once from numpy seed 0, hard-coded
   and asserted at the start of every run
-- Theoretical sample threshold `n^k = 64,000`
+- Reference scale `n^k = 64,000` (not an exact sample threshold)
 - Model: 1 hidden-layer MLP, `40 -> 64 -> 1`, ReLU, no output activation,
   about 2,700 parameters
 - Loss: MSE against `+/- 1` targets
 - Optimizer: plain `torch.optim.SGD`, `lr = 0.1`, `momentum = 0`, no weight
   decay, no LR schedule. The trainer rejects any non-SGD optimizer explicitly
-- Sampling: strict online. A fresh batch drawn from the true distribution
-  every step. Never a fixed dataset, never repeated epochs
+- Sampling: the main sweep draws a fresh batch from the true distribution
+  every step; the separate fixed-pool aside reuses training examples
 - Batch size: 32
 - Sample budgets swept: 16,000 (below), 64,000 (near), 250,000 (above),
   500,000 (way above)
@@ -46,34 +46,29 @@ subject to the same `n^k` floor.
 ## Hero result 1: the sample-complexity sweep
 
 The sweep plots eval loss vs cumulative samples on a log x-axis across four
-budgets straddling `n^k`, each with independent seeds so run-to-run variance
-shows up as visible spread rather than a single overlaid curve.
+budgets around the `n^k` reference scale. Each budget uses one seed, so the
+curves show individual trajectories rather than a distribution of outcomes.
 
-- **Below threshold (16k, 0.25x)**: stays completely flat at eval loss ~1.03
-  for the entire run. Never departs from the random-guess baseline. This is
-  the SQ floor showing up as a real negative result: single-pass SGD given
-  fewer than `n^k` independent samples has no information it can use to
-  distinguish the true parity from the other `C(40, 3) = 9,880` possibilities.
-- **Near threshold (64k, 1.0x)**: flat until samples ~44,800, then drops
+- **Short run (16k, 0.25x `n^k`)**: stays near eval loss ~1.03 for the
+  entire run. This is a negative outcome for this seed and training budget;
+  it does not show that learning from fewer than `n^k` samples is impossible.
+- **Near reference scale (64k, 1.0x)**: flat until samples ~44,800, then drops
   through samples ~48k-56k, converged just before the budget ends.
-- **Above threshold (250k, 3.9x)**: flat ends earliest at samples ~36,800,
+- **Longer run (250k, 3.9x)**: flat ends earliest at samples ~36,800,
   drops through samples ~40k-48k, converged by ~54,400, floor by ~160,000.
-- **Way above threshold (500k, 7.8x)**: flat ends around ~38,400, drops
-  through ~40k-52k, converged by ~61,600. Extra budget past ~160k is pure
-  headroom, not an earlier drop. The drop location saturates rather than
-  sliding further as budget grows.
+- **Longest run (500k, 7.8x)**: flat ends around ~38,400, drops
+  through ~40k-52k, converged by ~61,600, and remains near zero loss after
+  ~160k samples.
 
 **Run-to-run scatter**: with independent seeds, the drop midpoint (first
 sample at which eval loss crosses below 0.5) sits at ~41.6k, ~44.8k, and
 ~49.6k across the three learning runs, a ~8,000-sample spread or about 15%
-of the theoretical threshold. This is the natural variance from random init
-and random training draws, reported here rather than averaged away.
+of `n^k`. These are different seeds at different budgets, so the spread
+cannot isolate seed variance from run configuration.
 
-**All three learning runs converge somewhat before the `n^k` threshold**
-(convergence at samples ~54k-62k, below the theoretical 64k). This is
-expected: the SQ lower bound is asymptotic with unspecified constants, so
-the observed transition landing below `n^k` but within a factor of two of
-it is consistent with the bound rather than in tension with it.
+**All three learning runs converge before the `n^k` reference count**
+(at ~54k-62k samples). A single `n`, `k`, and seed per budget cannot test an
+asymptotic SQ scaling law or locate a universal transition point.
 
 | Sample budget | vs `n^k` | Learned? | Flat ends | Drop midpoint | Converged (eval < 0.005) | Final eval |
 |--------------:|:--------:|:--------:|----------:|--------------:|-------------------------:|-----------:|
@@ -101,7 +96,7 @@ Under uniform `+/- 1` inputs these are exactly the Fourier coefficients of
 expect `corr_{full triple} -> 1` and every other subset `-> 0`. The
 interesting question is the temporal ordering during the drop.
 
-What actually happens on the 250k above-threshold run:
+What actually happens on the 250k run:
 
 - The **full triple {20, 24, 32}** correlation (bold red) rises from ~0 to
   ~1.0 across samples 35k-47k. Dominant signal.
@@ -151,26 +146,18 @@ measurable structure in the network output.
 ## An aside: the fixed-pool multi-pass result
 
 For completeness, `configs/aside_fixed_pool.yaml` trains the same MLP but
-restricts the training data to a fixed pool of 25,600 unique samples
+restricts the training data to a fixed pool of 25,600 sampled rows
 (~0.4x `n^k`) and cycles through them for 78 epochs, or 2,000,000 total
 sample views. Eval is still fresh online. The model reaches essentially
 zero eval loss.
 
-This is not a contradiction of the SQ lower bound. The bound applies to
-single-pass correlational-SQ algorithms, which single-pass online SGD
-approximates. Multi-pass SGD over a small fixed pool is a fundamentally
-different algorithm: it is allowed to inspect the same 25,600 rows
-repeatedly and can extract information a single-pass SQ learner cannot.
-Statistically, a fixed pool of 25,600 `+/- 1` samples carries many more
-than the ~13 bits needed to identify one of `C(40, 3) = 9,880` possible
-k=3 parities, so given enough compute over that pool and a small enough
-model (here about 2,700 parameters vs 25,600 pool rows, well
-underparameterized) the network finds the true generator.
-
-This is called out here as a distinct finding, not as the below-threshold
-negative result. The proper below-threshold negative result is `sweep_below`,
-which stays flat because it is strictly single-pass online with fewer than
-`n^k` independent samples.
+This is compatible with the SQ computational lower bound. The fixed-pool run
+has 25,600 sampled training rows and 2,000,000 sample views, while the
+short online run stops after 16,000 fresh examples. Both the data budget and
+the amount of optimization differ, so these runs alone do not identify
+repeated access as the cause of learning. The fixed-pool result also
+illustrates why `n^k` should not be read as an information-theoretic minimum
+number of distinct examples.
 
 Data: `results/aside_fixed_pool/log.csv`.
 
@@ -188,26 +175,24 @@ Data: `results/aside_fixed_pool/log.csv`.
   of indices from `S`. If they do, the hypothesis is supported. If they
   do not, the pair correlations have some other origin, e.g. a distributed
   pair-like signal spread across many units.
-- **Sweep k.** Move from `k = 3` to `k = 4` (threshold `40^4 = 2,560,000`)
-  and check whether the drop still scales as `n^k` and whether the
+- **Sweep k.** Move from `k = 3` to `k = 4` (`40^4 = 2,560,000` as a
+  reference count) and test how the drop location scales and whether the
   low-degree Fourier staircase becomes more pronounced. The classic
   prediction is that larger `k` gives a longer, more visible search phase
   and a wider separation between low-degree and full-degree Fourier signals.
-- **Repeat with Adam** instead of plain SGD. Adam's per-parameter adaptive
-  scaling arguably escapes the strict correlational-SQ framing. If Adam
-  shifts the drop location substantially in either direction, that is
-  direct evidence that adaptivity changes the sample complexity of parity
-  learning in practice, not just wall-clock behavior.
-- **Scale n.** `n = 50, k = 3` gives a threshold of 125,000. `n = 100,
-  k = 3` (as in Barak et al.'s hero figure) gives `10^6` and a much longer
-  visible flat phase.
+- **Repeat with Adam** instead of plain SGD. Compare drop locations across
+  multiple seeds to test whether adaptive updates change the observed
+  training dynamics.
+- **Scale n.** `n = 50, k = 3` gives `n^k = 125,000`; `n = 100,
+  k = 3` gives `n^k = 10^6`. Multiple sizes and seeds would make a scaling
+  claim testable.
 - **Multiple seeds per budget in the sweep** to get error bars on the drop
   location rather than the current single-seed-per-budget summary.
 
 ## Running it
 
 ```bash
-# Sanity check: run above threshold, confirm the flat-then-drop shape appears
+# Sanity check: confirm the flat-then-drop shape appears for this seed
 python3 train.py --config configs/sanity.yaml
 
 # Sweep (independent seeds per run)
