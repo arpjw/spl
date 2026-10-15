@@ -147,9 +147,9 @@ measurable structure in the network output.
 
 For completeness, `configs/aside_fixed_pool.yaml` trains the same MLP but
 restricts the training data to a fixed pool of 25,600 sampled rows
-(~0.4x `n^k`) and cycles through them for 78 epochs, or 2,000,000 total
-sample views. Eval is still fresh online. The model reaches essentially
-zero eval loss.
+(~0.4x `n^k`) and samples from it with replacement for 2,000,000 total
+sample views, about 78 times the pool size. Eval is still fresh online. The
+model reaches essentially zero eval loss.
 
 This is compatible with the SQ computational lower bound. The fixed-pool run
 has 25,600 sampled training rows and 2,000,000 sample views, while the
@@ -201,7 +201,7 @@ python3 train.py --config configs/sweep_near.yaml
 python3 train.py --config configs/sweep_above.yaml
 python3 train.py --config configs/sweep_way_above.yaml
 
-# Aside: fixed pool of 25.6k samples cycled 78 epochs
+# Aside: 2 million draws with replacement from a fixed pool of 25.6k rows
 python3 train.py --config configs/aside_fixed_pool.yaml
 
 # Fourier tracker: re-runs sweep_above with identical seeds so the model
