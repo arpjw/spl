@@ -89,7 +89,7 @@ def build_target_samples(
     lo, hi = fine_window
     hi = min(hi, total_samples)
     fine_pts = list(range(lo, hi + 1, fine)) if lo <= hi else []
-    return sorted(set(coarse_pts + fine_pts))
+    return sorted(set(coarse_pts + fine_pts + [total_samples]))
 
 
 def track(
@@ -126,7 +126,9 @@ def track(
 
     batch_size = int(cfg["batch_size"])
     sample_budget = int(cfg["sample_budget"])
-    total_steps = sample_budget // batch_size
+    if sample_budget <= 0 or batch_size <= 0:
+        raise ValueError("sample_budget and batch_size must be positive")
+    total_steps = (sample_budget + batch_size - 1) // batch_size
 
     torch.manual_seed(int(cfg["model_seed"]))
     device = torch.device(cfg.get("device", "cpu"))
@@ -172,7 +174,9 @@ def track(
 
         t0 = time.time()
         for step in range(1, total_steps + 1):
-            x_t, y_t = sample_batch(train_rng, n, S, batch_size)
+            cum = min(step * batch_size, sample_budget)
+            current_batch_size = cum - (step - 1) * batch_size
+            x_t, y_t = sample_batch(train_rng, n, S, current_batch_size)
             x_t = x_t.to(device)
             y_t = y_t.to(device)
 
@@ -182,7 +186,6 @@ def track(
             train_l.backward()
             optimizer.step()
 
-            cum = step * batch_size
             while next_i < len(targets) and cum >= targets[next_i]:
                 log_checkpoint(writer, step, cum)
                 f.flush()

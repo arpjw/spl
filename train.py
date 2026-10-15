@@ -97,7 +97,9 @@ def train(cfg: dict) -> None:
     # Budget arithmetic.
     batch_size = int(cfg["batch_size"])
     sample_budget = int(cfg["sample_budget"])
-    total_steps = sample_budget // batch_size
+    if sample_budget <= 0 or batch_size <= 0:
+        raise ValueError("sample_budget and batch_size must be positive")
+    total_steps = (sample_budget + batch_size - 1) // batch_size
     threshold = n ** k
     print(
         f"[setup] sample_budget={sample_budget}, batch_size={batch_size}, "
@@ -139,14 +141,14 @@ def train(cfg: dict) -> None:
             f"({sample_budget / fixed_pool_size:.1f} epochs)"
         )
 
-        def get_train_batch() -> tuple[torch.Tensor, torch.Tensor]:
-            idx = train_rng.integers(0, fixed_pool_size, size=batch_size)
+        def get_train_batch(size: int) -> tuple[torch.Tensor, torch.Tensor]:
+            idx = train_rng.integers(0, fixed_pool_size, size=size)
             return pool_x[idx], pool_y[idx]
     else:
         print("[setup] data_mode=online")
 
-        def get_train_batch() -> tuple[torch.Tensor, torch.Tensor]:
-            x, y = sample_batch(train_rng, n, S, batch_size)
+        def get_train_batch(size: int) -> tuple[torch.Tensor, torch.Tensor]:
+            x, y = sample_batch(train_rng, n, S, size)
             return x.to(device), y.to(device)
 
     log_path = out_dir / "log.csv"
@@ -162,7 +164,9 @@ def train(cfg: dict) -> None:
 
         t0 = time.time()
         for step in range(1, total_steps + 1):
-            x, y = get_train_batch()
+            cumulative_samples = min(step * batch_size, sample_budget)
+            current_batch_size = cumulative_samples - (step - 1) * batch_size
+            x, y = get_train_batch(current_batch_size)
 
             pred = model(x)
             train_l = ((pred - y) ** 2).mean()
@@ -170,8 +174,6 @@ def train(cfg: dict) -> None:
             optimizer.zero_grad()
             train_l.backward()
             optimizer.step()
-
-            cumulative_samples = step * batch_size
 
             if step % eval_every == 0 or step == total_steps:
                 el = eval_loss(model, eval_rng, n, S, eval_batch_size, device)
@@ -190,7 +192,7 @@ def train(cfg: dict) -> None:
 
     elapsed = time.time() - t0
     print(f"[done] wrote {log_path} in {elapsed:.1f}s "
-          f"({total_steps} steps, {total_steps * batch_size} samples)")
+          f"({total_steps} steps, {sample_budget} samples)")
 
 
 def main() -> None:
