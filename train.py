@@ -97,14 +97,14 @@ def train(cfg: dict) -> None:
     batch_size = int(cfg["batch_size"])
     sample_budget = int(cfg["sample_budget"])
     total_steps = sample_budget // batch_size
-    reference_samples = n ** k
+    threshold = n ** k
     print(
         f"[setup] sample_budget={sample_budget}, batch_size={batch_size}, "
         f"total_steps={total_steps}"
     )
     print(
-        f"[setup] n^k reference={reference_samples}, "
-        f"budget/reference={sample_budget / reference_samples:.2f}x"
+        f"[setup] n^k threshold={threshold}, "
+        f"budget/threshold={sample_budget / threshold:.2f}x"
     )
 
     # Model + optimizer.
@@ -125,7 +125,7 @@ def train(cfg: dict) -> None:
     eval_every = int(cfg["eval_every_steps"])
     eval_batch_size = int(cfg["eval_batch_size"])
 
-    # Data source: online (default) or fixed-pool (separate multi-pass run).
+    # Data source: online (default) or fixed-pool (below-threshold negative run).
     fixed_pool_size = int(cfg.get("fixed_pool_size") or 0)
     if fixed_pool_size > 0:
         pool_x, pool_y = sample_batch(train_rng, n, S, fixed_pool_size)
@@ -133,9 +133,9 @@ def train(cfg: dict) -> None:
         pool_y = pool_y.to(device)
         print(
             f"[setup] data_mode=fixed_pool, unique_samples={fixed_pool_size} "
-            f"({fixed_pool_size / reference_samples:.2f}x n^k), "
+            f"({fixed_pool_size / threshold:.2f}x n^k), "
             f"total sample_views over run={sample_budget} "
-            f"({sample_budget / fixed_pool_size:.1f} pool-size-equivalent draws)"
+            f"({sample_budget / fixed_pool_size:.1f} epochs)"
         )
 
         def get_train_batch() -> tuple[torch.Tensor, torch.Tensor]:
