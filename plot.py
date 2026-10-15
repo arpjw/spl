@@ -2,8 +2,8 @@
 
     results/sweep_plot.png
         Eval loss vs cumulative samples across the four sweep runs, log-x,
-        with the n^k = 64,000 threshold marked. Shows flat-then-drop above
-        threshold and flat-forever below.
+        with n^k = 64,000 marked as a reference scale. Shows the four
+        observed trajectories, one seed at each budget.
 
     results/fourier_staircase.png
         All 2^k = 8 subset correlations of the network output with the
@@ -25,7 +25,7 @@ import matplotlib.pyplot as plt
 
 
 RESULTS = Path("results")
-THRESHOLD = 40 ** 3  # n^k for the sweep, n=40, k=3.
+REFERENCE_SAMPLES = 40 ** 3  # n^k for the sweep, n=40, k=3.
 
 
 def load_log(path: Path) -> tuple[list[int], list[float]]:
@@ -53,16 +53,16 @@ def plot_sweep(output_path: Path) -> None:
     runs = [
         # (path, label, color, linestyle, linewidth)
         (RESULTS / "sweep_below" / "log.csv",
-         "below: 16k samples (0.25x threshold), never learns",
+         "16k samples (0.25x reference): no learning in this run",
          "#d62728", "-", 1.8),
         (RESULTS / "sweep_near" / "log.csv",
-         "near: 64k samples (1.0x threshold)",
+         "64k samples (1.0x reference)",
          "#ff7f0e", "-", 1.8),
         (RESULTS / "sweep_above" / "log.csv",
-         "above: 250k samples (3.9x threshold)",
+         "250k samples (3.9x reference)",
          "#1f77b4", "-", 1.8),
         (RESULTS / "sweep_way_above" / "log.csv",
-         "way above: 500k samples (7.8x threshold)",
+         "500k samples (7.8x reference)",
          "#2ca02c", "--", 1.4),
     ]
 
@@ -72,8 +72,8 @@ def plot_sweep(output_path: Path) -> None:
         ax.plot(xs, ys, label=label, color=color, linestyle=ls, linewidth=lw)
 
     ax.axvline(
-        THRESHOLD, color="black", linestyle=":", linewidth=1.0, alpha=0.7,
-        label=f"n^k threshold = {THRESHOLD:,}",
+        REFERENCE_SAMPLES, color="black", linestyle=":", linewidth=1.0, alpha=0.7,
+        label=f"n^k reference = {REFERENCE_SAMPLES:,}",
     )
 
     ax.set_xscale("log")

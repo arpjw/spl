@@ -1,8 +1,7 @@
-# Comfortably-above-threshold sweep run: budget ~7.8x n^k.
+# Longest sweep run: budget ~7.8x the n^k reference.
 #
-# Purpose: show the drop point shifting earlier (in samples) as the budget
-# grows, i.e. more headroom above the SQ floor. Otherwise identical to
-# sweep_above.
+# Uses a separate seed from sweep_above. Different drop locations cannot be
+# attributed to the budget alone.
 
 run_name: sweep_way_above
 

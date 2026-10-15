@@ -1,8 +1,7 @@
 # Sanity-check run for the sparse parity replication.
 #
-# Sample budget is chosen comfortably above the n^k threshold (~27,000 for
-# n=30, k=3). If this run ends flat, the first response is to bump this
-# budget by 3x, not to touch the optimizer.
+# Sample budget is ~3.9x the n^k reference (64,000 for n=40, k=3).
+# A flat run at one seed would motivate a replicated study, not a hard cutoff.
 
 run_name: sanity
 
@@ -12,7 +11,7 @@ k: 3
 S_seed: 0  # data.py logs the actual S at run start; train.py asserts it matches.
 expected_S: [20, 24, 32]
 
-# Sample budget: ~3.9x the n^k = 64000 threshold.
+# Sample budget: ~3.9x the n^k = 64,000 reference.
 sample_budget: 250000
 
 # Model: 1 hidden layer, width 64, ReLU, scalar output.

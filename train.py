@@ -7,11 +7,10 @@ Key invariants enforced here (see CLAUDE.md gotchas):
   4. Eval batches are always drawn fresh from the true distribution, even in
      fixed-pool mode, so eval loss stays an unbiased test-error estimate.
 
-Fixed-pool mode is a deliberate departure from invariant (1) used only for the
-below-threshold negative-result run. It fixes the number of unique samples the
-model can see (to force a real information-theoretic constraint) while still
-letting us run for many gradient steps, so a persistently flat eval curve is
-strong evidence the SQ floor is real and not just early stopping.
+Fixed-pool mode is a deliberate departure from invariant (1), used for a
+separate multi-pass comparison. It samples repeatedly from a fixed pool of
+rows. The fixed-pool and short online runs have different data and training
+budgets, so they do not isolate the effect of repeated access.
 """
 
 from __future__ import annotations
@@ -128,7 +127,7 @@ def train(cfg: dict) -> None:
     eval_every = int(cfg["eval_every_steps"])
     eval_batch_size = int(cfg["eval_batch_size"])
 
-    # Data source: online (default) or fixed-pool (below-threshold negative run).
+    # Data source: online (default) or fixed-pool (separate multi-pass run).
     fixed_pool_size = int(cfg.get("fixed_pool_size") or 0)
     if fixed_pool_size > 0:
         pool_x, pool_y = sample_batch(train_rng, n, S, fixed_pool_size)
