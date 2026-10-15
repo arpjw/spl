@@ -1,13 +1,10 @@
-# Below-threshold sweep run: the legitimate negative result.
+# Short sweep run: a negative outcome for this seed and budget.
 #
 # Strict online sampling. Fresh batch every step, no fixed dataset, no
-# repeated epochs. Sample budget: 16,000 (~0.25x the n^k = 64,000 threshold).
-# This directly demonstrates the single-pass SQ floor: given fewer than n^k
-# independent samples total, ever, single-pass SGD does not learn the parity.
+# repeated access. Sample budget: 16,000 (~0.25x the n^k = 64,000 reference).
+# This one run does not establish a universal sample floor.
 #
-# Runtime is short by design. The point is that the model has literally
-# never seen enough independent data for the SQ bound to be satisfied, not
-# that we ran out of gradient steps.
+# The shorter training budget also means fewer gradient steps.
 
 run_name: sweep_below
 

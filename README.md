@@ -10,8 +10,7 @@ about 4,000-6,000 samples before the loss curve moves in one run.
 
 ![sample complexity sweep](results/sweep_plot.png)
 
-The figure's `n^k threshold` marker is a reference scale, not a proven
-sample cutoff.
+The figure marks `n^k` as a reference scale, not a proven sample cutoff.
 
 ## What is sparse parity learning, and why can it be computationally hard?
 

@@ -1,8 +1,7 @@
-# Near-threshold sweep run: budget ~= n^k.
+# Sweep run with budget near the n^k reference.
 #
-# ~1.0x the n^k = 64,000 threshold. Interesting boundary case: theory says
-# roughly n^k is where things start being learnable, so this run may or may
-# not cross the drop within the budget.
+# ~1.0x the n^k = 64,000 reference scale. This run may or may not cross the
+# observed drop within its budget; n^k is not an exact sample cutoff.
 
 run_name: sweep_near
 

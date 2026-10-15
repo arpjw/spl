@@ -1,4 +1,4 @@
-# Above-threshold sweep run: budget ~3.9x n^k.
+# Longer sweep run: budget ~3.9x the n^k reference.
 #
 # Mirrors the already-validated sanity config. Rerun under the sweep_above
 # name so all sweep outputs live together under results/sweep_*/log.csv.
